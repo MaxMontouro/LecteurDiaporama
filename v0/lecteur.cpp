@@ -9,11 +9,19 @@ Lecteur::Lecteur()
 void Lecteur::avancer()
 {
     (*this)._posImageCourante = ((*this)._posImageCourante+1)%(*this).nbImages();
+    if ((*this)._posImageCourante == 0)
+    {
+        (*this)._posImageCourante++;
+    }
 }
 
 void Lecteur::reculer()
 {
     (*this)._posImageCourante = ((*this)._posImageCourante-1)%(*this).nbImages();
+    if ((*this)._posImageCourante == 0)
+    {
+        (*this)._posImageCourante=(*this).nbImages();
+    }
 }
 
 void Lecteur::changerDiaporama(unsigned int pNumDiaporama)
@@ -33,8 +41,8 @@ void Lecteur::changerDiaporama(unsigned int pNumDiaporama)
 
 void Lecteur::chargerDiaporama()
 {
-    /* Chargement des images associées au diaporama courant
-       Dans une version ultérieure, ces données proviendront d'une base de données,
+    /* Chargement des images associÃ©es au diaporama courant
+       Dans une version ultÃ©rieure, ces donnÃ©es proviendront d'une base de donnÃ©es,
        et correspondront au diaporama choisi */
     Image* imageACharger;
     imageACharger = new Image(3, "personne", "Blanche Neige", "C:\\cartesDisney\\carteDisney2.gif");
@@ -48,25 +56,26 @@ void Lecteur::chargerDiaporama()
 
 
      // trier le contenu du diaporama par ordre croissant selon le rang de l'image dans le diaporama
-     // À FAIRE
+     // Ã€ FAIRE
      // Tri bulle
-    int pass = 0;
-    bool permut = true;
-   
-    while (permut)
-    {
-        permut = false;
-        pass ++;
-        for (unsigned int cpt=0;static_cast<int>(cpt)<20-pass;cpt++)
+     bool trie;
+     for (unsigned int cpt1 = (*this).nbImages()-1;cpt1>=1;cpt1--)
+     {
+        trie = true;
+        for (unsigned int cpt2=0;cpt2<=cpt1-1;cpt2++)
         {
-            if ((*this)._diaporama[cpt]>(*this)._diaporama[cpt+1])
+            if ((*this)._diaporama[cpt2]->getRang() > (*this)._diaporama[cpt2+1]->getRang())
             {
-                permut = true;
-                // Échange des deux éléments
-                Image *tmp = (*this)._diaporama[cpt];
-                (*this)._diaporama[cpt] = (*this)._diaporama[cpt+1];
-                (*this)._diaporama[cpt+1] = tmp;
+                trie = false;
+                // Ã‰change des deux Ã©lÃ©ments
+                Image *tmp = (*this)._diaporama[cpt2];
+                (*this)._diaporama[cpt2] = (*this)._diaporama[cpt2+1];
+                (*this)._diaporama[cpt2+1] = tmp;
             }
+        }
+        if (trie)
+        {
+            break;
         }
     }
 
@@ -104,18 +113,18 @@ void Lecteur::viderDiaporama()
 void Lecteur::afficher()
 {
     /* affiche les information sur le lecteur :
-     * 1) vide (si num. de diaporama = 0) OU BIEN  numéro de diaporama affiché
-     * 2) Si un diaporama courant est chargé (num. de diaporama > 0), affiche l'image courante OU BIEN 'diaporama vide'
+     * 1) vide (si num. de diaporama = 0) OU BIEN  numÃ©ro de diaporama affichÃ©
+     * 2) Si un diaporama courant est chargÃ© (num. de diaporama > 0), affiche l'image courante OU BIEN 'diaporama vide'
      *     si ce diaporama n'a aucun image */
     
     // 1)
     if ((*this)._numDiaporamaCourant == 0)
     {
-        cout << endl << "vide";
+        cout << "Lecteur vide" << endl;
     }
     else
     {
-        cout << (*this).numDiaporamaCourant();
+        cout << "Diaporama num. " << (*this).numDiaporamaCourant() << endl;
     }
 
     // 2)
@@ -127,7 +136,7 @@ void Lecteur::afficher()
         }
         else
         {
-            cout << endl << "Diaporama vide";
+            cout << endl << "Diaporama vide" << endl;
         }
     }
 }
