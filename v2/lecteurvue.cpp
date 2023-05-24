@@ -2,6 +2,11 @@
 #include "ui_lecteurvue.h"
 
 #include <QMessageBox>
+//#include <ctime>
+#include <chrono>
+#include <thread>
+#include <cstring>
+#include <QDebug>
 
 LecteurVue::LecteurVue(QWidget *parent)
     : QMainWindow(parent)
@@ -11,11 +16,34 @@ LecteurVue::LecteurVue(QWidget *parent)
     _numDiaporamaCourant = 0;   // =  le lecteur est vide
     _posImageCourante = 0; // Diaporama vide
 
+    setWindowTitle(tr("Lecteur de diaporama"));
+
+    // Font
+    QFont fTitreDiapo(tr("Helevtica"),15,QFont::Bold);
+    QFont fTitreImage(tr("Arial"),11,QFont::DemiBold);
+    QFont fInfoSupImage(tr("Arial Narrow"),10,QFont::Cursive);
+
+    // Image de base
+    ui->lImage->setPixmap(QPixmap(":/v2/cartesDisney/Disney_tapis.gif"));
+
+    // Application des fonts
+    ui->lTitreDiapo->setFont(fTitreDiapo);
+    ui->lTitreImage->setFont(fTitreImage);
+    ui->lRangImage->setFont(fInfoSupImage);
+    ui->lCategorieImage->setFont(fInfoSupImage);
+
     connect(ui->actionA_propose_de,SIGNAL(triggered()),this,SLOT(affichageInfosApp()));
 
-    QString sMode = " Manuel";
-    QString msgMode = "Mode :";
-    ui->statusbar->showMessage(msgMode + sMode);
+    //connect(ui->actionCharger_diaporama,SIGNAL(triggered()),this,SLOT(chargerDiaporama()));
+    connect(ui->bSuivant,SIGNAL(clicked()),this,SLOT(demandeAvancer()));
+    connect(ui->bPrecedent,SIGNAL(clicked()),this,SLOT(demandeReculer()));
+    connect(ui->actionEnlever_diaporama,SIGNAL(triggered()),this,SLOT(demandeVider()));
+    connect(ui->bLancerDiapo,SIGNAL(clicked()),this,SLOT(demandeChangementMode()));
+    connect(ui->bArreterDiapo,SIGNAL(clicked()),this,SLOT(demandeChangementMode()));
+
+    //QString sMode = "Mode : Manuel";
+    //ui->statusbar->showMessage(sMode);
+    this->mode(false);
 }
 
 LecteurVue::~LecteurVue()
@@ -25,24 +53,65 @@ LecteurVue::~LecteurVue()
 
 void LecteurVue::avancer()
 {
-    (*this)._posImageCourante = ((*this)._posImageCourante+1)%(*this).nbImages();
+    qDebug() << "Avancement de l'image";
+    (*this)._posImageCourante = ((*this)._posImageCourante+1)%((*this).nbImages()+1);
     if ((*this)._posImageCourante == 0)
     {
         (*this)._posImageCourante++;
     }
+
+    // Affichage de l'image
+    QString chemImage = this->getCheminRscImage(this->imageCourante()->getChemin());
+    ui->lImage->setPixmap(QPixmap(chemImage));
+    QString tAAfficher = "Diaporama n°";
+    QString t;
+    t.setNum(this->numDiaporamaCourant());
+    tAAfficher+=t;
+    ui->lTitreDiapo->setText(tAAfficher);
+    ui->lTitreImage->setText(QString::fromStdString(this->imageCourante()->getTitre()));
+    ui->lCategorieImage->setText(QString::fromStdString(this->imageCourante()->getCategorie()));
+    QString rAAfficher = "Image n°";
+        QString r;
+    r.setNum(this->imageCourante()->getRang());
+    rAAfficher+=r;
+    rAAfficher+=QString::fromStdString("/");
+    r.setNum(this->nbImages());
+    rAAfficher+=r;
+    ui->lRangImage->setText(rAAfficher);
 }
 
 void LecteurVue::reculer()
 {
-    (*this)._posImageCourante = ((*this)._posImageCourante-1)%(*this).nbImages();
+    qDebug() << "Reculement de l'image";
+    (*this)._posImageCourante = ((*this)._posImageCourante-1)%((*this).nbImages()+1);
     if ((*this)._posImageCourante == 0)
     {
         (*this)._posImageCourante=(*this).nbImages();
     }
+
+    // Affichage de l'image
+    QString chemImage = this->getCheminRscImage(this->imageCourante()->getChemin());
+    ui->lImage->setPixmap(QPixmap(chemImage));
+    QString tAAfficher = "Diaporama n°";
+    QString t;
+    t.setNum(this->numDiaporamaCourant());
+    tAAfficher+=t;
+    ui->lTitreDiapo->setText(tAAfficher);
+    ui->lTitreImage->setText(QString::fromStdString(this->imageCourante()->getTitre()));
+    ui->lCategorieImage->setText(QString::fromStdString(this->imageCourante()->getCategorie()));
+    QString rAAfficher = "Image n°";
+    QString r;
+    r.setNum(this->imageCourante()->getRang());
+    rAAfficher+=r;
+    rAAfficher+=QString::fromStdString("/");
+    r.setNum(this->nbImages());
+    rAAfficher+=r;
+    ui->lRangImage->setText(rAAfficher);
 }
 
 void LecteurVue::changerDiaporama(unsigned int pNumDiaporama)
 {
+    qDebug() << "Changement de diaporama";
     // s'il y a un diaporama courant, le vider, puis charger le nouveau Diaporama
     if (numDiaporamaCourant() > 0)
     {
@@ -58,26 +127,27 @@ void LecteurVue::changerDiaporama(unsigned int pNumDiaporama)
 
 void LecteurVue::chargerDiaporama()
 {
+    qDebug() << "Chargement du diaporama";
     /* Chargement des images associées au diaporama courant
        Dans une version ultérieure, ces données proviendront d'une base de données,
        et correspondront au diaporama choisi */
     Image* imageACharger;
-    imageACharger = new Image(3, "personne", "Blanche Neige", "C:\\cartesDisney\\carteDisney2.gif");
+    imageACharger = new Image(3, "personne", "Blanche Neige", "C:\\cartesDisney\\Disney_2.gif");
     _diaporama.push_back(imageACharger);
-    imageACharger = new Image(2, "personne", "Cendrillon", "C:\\cartesDisney\\carteDisney4.gif");
+    imageACharger = new Image(2, "personne", "Cendrillon", "C:\\cartesDisney\\Disney_4.gif");
     _diaporama.push_back(imageACharger);
-    imageACharger = new Image(4, "animal", "Mickey", "C:\\cartesDisney\\carteDisney1.gif");
+    imageACharger = new Image(4, "animal", "Mickey", "C:\\cartesDisney\\Disney_1.gif");
     _diaporama.push_back(imageACharger);
-    imageACharger = new Image(1, "personne", "Grincheux", "C:\\cartesDisney\\carteDisney1.gif");
+    imageACharger = new Image(1, "personne", "Grincheux", "C:\\cartesDisney\\Disney_10.gif");
     _diaporama.push_back(imageACharger);
 
 
-     // trier le contenu du diaporama par ordre croissant selon le rang de l'image dans le diaporama
-     // À FAIRE
-     // Tri bulle
-     bool trie;
-     for (unsigned int cpt1 = (*this).nbImages()-1;cpt1>=1;cpt1--)
-     {
+    // trier le contenu du diaporama par ordre croissant selon le rang de l'image dans le diaporama
+    // À FAIRE
+    // Tri bulle
+    bool trie;
+    for (unsigned int cpt1 = (*this).nbImages()-1;cpt1>=1;cpt1--)
+    {
         trie = true;
         for (unsigned int cpt2=0;cpt2<=cpt1-1;cpt2++)
         {
@@ -105,13 +175,34 @@ void LecteurVue::chargerDiaporama()
         _posImageCourante = 0;
     }
 
-     cout << "Diaporama num. " << numDiaporamaCourant() << " selectionne. " << endl;
-     cout << nbImages() << " images chargees dans le diaporama" << endl;
+    cout << "Diaporama num. " << numDiaporamaCourant() << " selectionne. " << endl;
+    cout << nbImages() << " images chargees dans le diaporama" << endl;
 
+    // Récupération du nom de la première image
+    QString image = this->getCheminRscImage(this->imageCourante()->getChemin());
+    qDebug() << image;
+    // Affichage de l'image
+    ui->lImage->setPixmap(QPixmap(image));
+    QString tAAfficher = "Diaporama n°";
+    QString t;
+    t.setNum(this->numDiaporamaCourant());
+    tAAfficher+=t;
+    ui->lTitreDiapo->setText(tAAfficher);
+    ui->lTitreImage->setText(QString::fromStdString(this->imageCourante()->getTitre()));
+    ui->lCategorieImage->setText(QString::fromStdString(this->imageCourante()->getCategorie()));
+    QString rAAfficher = "Image n°";
+    QString r;
+    r.setNum(this->imageCourante()->getRang());
+    rAAfficher+=r;
+    rAAfficher+=QString::fromStdString("/");
+    r.setNum(this->nbImages());
+    rAAfficher+=r;
+    ui->lRangImage->setText(rAAfficher);
 }
 
 void LecteurVue::viderDiaporama()
 {
+    qDebug() << "Diapo clear";
     if (nbImages () > 0)
     {
         unsigned int taille = nbImages();
@@ -121,7 +212,7 @@ void LecteurVue::viderDiaporama()
                                       effectively reducing the container size by one.
                                       AND deletes the removed element */
         }
-     _posImageCourante = 0;
+        _posImageCourante = 0;
     }
     cout << nbImages() << " images restantes dans le diaporama." << endl;
 
@@ -137,7 +228,7 @@ void LecteurVue::afficher()
     // 1)
     if ((*this)._numDiaporamaCourant == 0)
     {
-         ui->lImage->setText("Lecteur vide\n");
+        ui->lImage->setText("Lecteur vide\n");
     }
     else
     {
@@ -186,10 +277,126 @@ void LecteurVue::affichageInfosApp()
     msgBox->exec();
 }
 
-void LecteurVue::mode(bool autoOuManuel)
+void LecteurVue::mode(bool autoMode)
 {
-    if (autoOuManuel)
+    if (autoMode)
     {
-        //
+        //this->viderDiaporama();
+        this->changerDiaporama(this->numDiaporamaCourant());
+        this->m_modeAuto=true;
+        QString sMode = "Mode : Automatique";
+        qDebug() << sMode;
+        ui->statusbar->showMessage(sMode,10000);
+
+        ui->bArreterDiapo->setEnabled(true);
+        //time_t tps = time(NULL);
+        while(this->m_modeAuto)
+        {
+            /*if (time(NULL)==tps+2)
+            {
+                this->avancer();
+                tps = time(NULL);
+            }*/
+            this_thread::sleep_for(chrono::milliseconds(2000));
+            this->avancer();
+        }
     }
+    else
+    {
+        this->m_modeAuto=false;
+        QString sMode = "Mode : Manuel";
+        qDebug() << sMode;
+        ui->statusbar->showMessage(sMode,10000);
+
+        ui->bArreterDiapo->setEnabled(false);
+    }
+}
+
+void LecteurVue::demandeAvancer()
+{
+    if (numDiaporamaCourant() <= 0)
+    {
+        QMessageBox::critical(this,tr("Erreur"),tr("Diaporama vide, impossible d'avancer !"),QMessageBox::Ok);
+    }
+    else
+    {
+        if (this->m_modeAuto)
+        {
+            this->mode(false);
+        }
+        this->avancer();
+    }
+}
+
+void LecteurVue::demandeReculer()
+{
+    if (numDiaporamaCourant() <= 0)
+    {
+        QMessageBox::critical(this,tr("Erreur"),tr("Diaporama vide, impossible de reculer !"),QMessageBox::Ok);
+    }
+    else
+    {
+        if (this->m_modeAuto)
+        {
+            this->mode(false);
+        }
+        this->reculer();
+    }
+}
+
+void LecteurVue::demandeVider()
+{
+    if (numDiaporamaCourant() <= 0)
+    {
+        QMessageBox::critical(this,tr("Erreur"),tr("Diaporama déjà vidé !"),QMessageBox::Ok);
+    }
+    else
+    {
+        this->viderDiaporama();
+        // Réinitialisation de l'affichage
+        ui->lImage->setPixmap(QPixmap("qrc:/v2/cartesDisney/Disney_tapis.gif"));
+        ui->lTitreDiapo->setText(tr("TitreDiapo"));
+        ui->lTitreImage->setText(tr("TitreImage"));
+        ui->lCategorieImage->setText(tr("CatImage"));
+        ui->lRangImage->setText(tr("RangImage"));
+        this->mode(false);
+    }
+}
+
+void LecteurVue::demandeChangementMode()
+{
+    if (this->m_modeAuto)
+    {
+        this->mode(false);
+    }
+    else
+    {
+        this->mode(true);
+    }
+}
+
+QString LecteurVue::getCheminRscImage(string cheminAct)
+{
+    // Récupération du nom de la première image
+    string s = cheminAct;
+    string delimiter = "\\";
+
+    unsigned int pos = 0;
+    string nomImage;
+    string tmp;
+    while (true)
+    {
+        pos = s.find(delimiter);
+        tmp = s.substr(0, pos);
+        if (tmp=="")
+        {
+            break;
+        }
+        nomImage = tmp;
+        s.erase(0, pos + delimiter.length());
+    }
+    // Création du chemin réel de l'image dans le pc
+    QString prefix = ":/v2/cartesDisney/";
+    QString cheminImage = prefix + QString::fromStdString(nomImage);
+    return cheminImage;
 }
