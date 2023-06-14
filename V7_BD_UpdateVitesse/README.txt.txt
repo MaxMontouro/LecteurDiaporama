@@ -1,0 +1,2 @@
+Pour la bonne exécution du code, il faut créer plusieurs connexion depuis le pilote ODBC 64. Elles seront otutes connectées à la base de données nondenot_bd9 disponible sur le serveur PhpMyAdmin lakartxela.iutbayonne.univ-pau.fr.
+Une première avec le DSN : Cmourgue_BD_S201
